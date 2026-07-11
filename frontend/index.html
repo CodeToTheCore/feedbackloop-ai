@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FeedbackLoop AI</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">FL</div>
+      <div class="brand-text">
+        <h1>FeedbackLoop AI</h1>
+        <span>interview feedback &amp; ranking agent &middot; live database</span>
+      </div>
+    </div>
+    <div class="req-picker" id="req-picker">
+      <strong>Loading requisition&hellip;</strong>
+    </div>
+  </header>
+
+  <div class="view-toggle">
+    <button id="btn-recruiter" class="active">Recruiter view</button>
+    <button id="btn-hm">Hiring manager view</button>
+  </div>
+
+  <div id="hm-note" class="restricted-note" style="display:none;">
+    <span class="dot"></span> Hiring managers see single-candidate summaries only &mdash; the cross-candidate ranking stays recruiter-owned.
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="sla">SLA Monitor <span class="count" id="count-sla"></span></div>
+    <div class="tab" data-tab="compare">Candidate Comparison <span class="count" id="count-compare"></span></div>
+  </div>
+
+  <div id="view-sla"><div class="sla-grid" id="sla-grid"></div></div>
+
+  <div id="view-compare" style="display:none;">
+    <div class="criteria-strip" id="criteria-strip"></div>
+    <div id="rank-cards"></div>
+  </div>
+
+  <div id="view-compare-hm" style="display:none;">
+    <div class="locked-panel">
+      <div class="lock-icon">&#128274;</div>
+      <h3>Cross-candidate ranking isn't shown to hiring managers</h3>
+      <p>This view stays recruiter-owned so the ranking reflects intake criteria the recruiter is accountable for. Pick a candidate below to see synthesized feedback for your req.</p>
+    </div>
+    <div style="height:20px;"></div>
+    <div id="hm-candidate-picker" class="hm-picker"></div>
+    <div id="hm-summary"></div>
+  </div>
+
+  <footer>FeedbackLoop AI &middot; live FastAPI + SQLite backend &middot; sample data seeded from PRD Eval Card</footer>
+</div>
+
+<!-- Deep-dive modal: raw DB record inspector -->
+<div id="modal-backdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="modal-title">Record detail</span>
+      <button id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

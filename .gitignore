@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite3
+
+# Env
+.env
+
+# Editor
+.vscode/*
+!.vscode/settings.json
+.DS_Store
