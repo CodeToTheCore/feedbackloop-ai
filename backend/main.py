@@ -23,6 +23,25 @@ from .routers import requisitions, candidates, interviews
 # Creates tables if they don't exist yet. seed.py is what actually populates data.
 Base.metadata.create_all(bind=engine)
 
+from .database import Base, engine, SessionLocal
+from . import models
+
+Base.metadata.create_all(bind=engine)
+
+# Auto-seed if the database is empty -- makes the app self-healing on
+# platforms like Render's free tier where local disk doesn't persist
+# across restarts.
+def _seed_if_empty():
+    db = SessionLocal()
+    try:
+        if db.query(models.Requisition).count() == 0:
+            from . import seed
+            seed.run()
+    finally:
+        db.close()
+
+_seed_if_empty()
+
 app = FastAPI(
     title="FeedbackLoop AI",
     description="Interview feedback & ranking agent -- backend API, built from the PRD in FeedbackLoop_AI_Agent_PRD.",
