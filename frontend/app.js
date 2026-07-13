@@ -155,6 +155,10 @@ function renderRankCards() {
     const conflictNote = r.conflict
       ? `<div class="conflict-note"><span class="icon">!</span><span class="text">Conflicting feedback, not averaged &mdash; recruiter decision needed.</span></div>`
       : "";
+    const historyNote = (r.history && r.history.length)
+      ? `<div class="history-note"><span class="icon">&#8635;</span><span class="text">
+          Seen before: ${r.history.map(h => `${h.req_code} (${h.title}) &middot; reached ${h.stage_reached}, ${h.outcome.replace(/_/g, " ")}${h.date ? " &middot; " + h.date : ""}`).join("<br>")}
+         </span></div>` : "";
     return `
       <div class="rank-card ${cardClass}" data-candidate-id="${r.candidate_id}">
         <div class="rank-card-head">
@@ -167,7 +171,7 @@ function renderRankCards() {
             <div class="score-label">signal score ${r.signal_score}</div></div>
         </div>
         <div class="rationale">${r.rationale}</div>
-        ${conflictNote}${excludedNote}
+        ${conflictNote}${historyNote}${excludedNote}
       </div>`;
   }).join("");
 

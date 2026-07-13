@@ -91,5 +91,5 @@ def comparison(req_id: int, db: Session = Depends(get_db)):
         "req_code": req.req_code,
         "title": req.title,
         "criteria": [{"category": c.category, "text": c.text} for c in req.criteria],
-        "ranking": agent.compare_candidates(req),
+        "ranking": agent.compare_candidates(db, req),
     }

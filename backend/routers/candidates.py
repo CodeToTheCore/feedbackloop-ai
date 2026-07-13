@@ -65,6 +65,20 @@ def candidate_full_detail(candidate_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/{candidate_id}/history")
+def candidate_history(candidate_id: int, db: Session = Depends(get_db)):
+    """
+    Maps to the get_candidate_history tool (PRD 3a): read-only, cross-requisition.
+    Returns prior requisitions this same candidate (name + normalized email)
+    appears on, with the stage reached and outcome. Empty list when there is no
+    confident match -- never a name-only guess.
+    """
+    cand = db.query(models.Candidate).filter(models.Candidate.id == candidate_id).first()
+    if not cand:
+        raise HTTPException(404, "Candidate not found")
+    return {"candidate_id": cand.id, "history": agent.get_candidate_history(db, cand)}
+
+
 @router.get("/{candidate_id}/summary")
 def candidate_summary(candidate_id: int, db: Session = Depends(get_db)):
     """Hiring-manager-safe single-candidate summary. No cross-candidate ranking data here."""

@@ -56,8 +56,29 @@ def run():
     ])
     db.commit()
 
+    # ---------------- Prior requisition (for cross-req history, PRD Eval Case 2) --------------
+    # A closed req from earlier this year. Jordan Reyes reached onsite here and got a
+    # no-hire; the SAME person (name + email) is now on REQ-4471, so get_candidate_history
+    # surfaces this prior context. Priya/Marcus intentionally have NO prior req -> no match.
+    prior_req = models.Requisition(
+        req_code="REQ-4201",
+        title="Backend Engineer, Ledger Platform",
+        status="closed",
+        opened_date=now - timedelta(days=125),
+    )
+    db.add(prior_req)
+    db.commit()
+    db.refresh(prior_req)
+
+    db.add(models.Candidate(
+        req_id=prior_req.id, name="Jordan Reyes", stage="onsite",
+        email="jordan.reyes@example.com", outcome="no_hire",
+    ))
+    db.commit()
+
     # ---------------- Candidate 1: Priya Patel (Eval Case 1 -- golden/normal) ----------------
-    priya = models.Candidate(req_id=req.id, name="Priya Patel", stage="onsite")
+    priya = models.Candidate(req_id=req.id, name="Priya Patel", stage="onsite",
+                             email="priya.patel@example.com")
     db.add(priya)
     db.commit()
     db.refresh(priya)
@@ -87,7 +108,8 @@ def run():
     db.commit()
 
     # ---------------- Candidate 2: Jordan Reyes (Eval Case 2 -- conflicting feedback) --------
-    jordan = models.Candidate(req_id=req.id, name="Jordan Reyes", stage="onsite")
+    jordan = models.Candidate(req_id=req.id, name="Jordan Reyes", stage="onsite",
+                              email="jordan.reyes@example.com")
     db.add(jordan)
     db.commit()
     db.refresh(jordan)
@@ -122,7 +144,8 @@ def run():
     db.commit()
 
     # ---------------- Candidate 3: Marcus Chen (Eval Case 3 -- adversarial injection) --------
-    marcus = models.Candidate(req_id=req.id, name="Marcus Chen", stage="onsite")
+    marcus = models.Candidate(req_id=req.id, name="Marcus Chen", stage="onsite",
+                              email="marcus.chen@example.com")
     db.add(marcus)
     db.commit()
     db.refresh(marcus)

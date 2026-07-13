@@ -67,6 +67,7 @@ class CandidateOut(BaseModel):
     req_id: int
     name: str
     stage: str
+    email: Optional[str] = None
 
 
 class RequisitionOut(BaseModel):

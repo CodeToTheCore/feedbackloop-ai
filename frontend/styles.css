@@ -140,6 +140,13 @@ header{
 .conflict-note .icon{ color: var(--clay); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
 .conflict-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
 
+.history-note{
+  margin-top: 12px; display:flex; gap:10px; align-items:flex-start;
+  background: rgba(111,168,138,0.08); border: 1px solid rgba(111,168,138,0.25); border-radius: 8px; padding: 11px 14px;
+}
+.history-note .icon{ color: var(--sage, #6FA88A); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
+.history-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
+
 .hm-picker{ display:flex; gap:8px; margin-bottom: 18px; flex-wrap:wrap; }
 .hm-picker button{
   font-family: var(--font-mono); font-size: 12px; padding: 8px 14px; border-radius: 7px;

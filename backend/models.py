@@ -60,6 +60,15 @@ class Candidate(Base):
     name = Column(String, nullable=False)
     stage = Column(String, default="onsite")
 
+    # Identity key for cross-req history matching (get_candidate_history, PRD 3a).
+    # History is matched on name + normalized email; when email is absent the
+    # lookup returns no match rather than guessing on name alone (PRD 3c safeguard).
+    email = Column(String, nullable=True, index=True)
+
+    # Terminal outcome on THIS req, once decided -- what a *later* req's history
+    # lookup surfaces (e.g. "no_hire"). Null while the candidate is still in flight.
+    outcome = Column(String, nullable=True)
+
     requisition = relationship("Requisition", back_populates="candidates")
     interviews = relationship("Interview", back_populates="candidate", cascade="all, delete-orphan")
 
