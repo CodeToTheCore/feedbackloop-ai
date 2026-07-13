@@ -34,10 +34,38 @@ const STATE_LABEL = {
   review: "Needs review",
 };
 
+const GENERIC_ERROR = "System error! Please refresh and try again";
+
 async function api(path, opts) {
-  const res = await fetch(API + path, opts);
-  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+  let res;
+  try {
+    res = await fetch(API + path, opts);
+  } catch (e) {
+    // Network / connectivity failure -- the server (and its DB) is unreachable.
+    showError(GENERIC_ERROR);
+    throw e;
+  }
+  if (!res.ok) {
+    // Surface the server's message when it provides one (DB errors send the
+    // "System error! Please refresh and try again" detail); fall back otherwise.
+    let msg = GENERIC_ERROR;
+    try {
+      const body = await res.json();
+      if (body && body.detail) msg = body.detail;
+    } catch (_) { /* non-JSON error body */ }
+    showError(msg);
+    throw new Error(`${path} -> ${res.status}`);
+  }
   return res.json();
+}
+
+function showError(msg) {
+  document.getElementById("error-banner-text").textContent = msg;
+  document.getElementById("error-banner").style.display = "flex";
+}
+
+function hideError() {
+  document.getElementById("error-banner").style.display = "none";
 }
 
 function fmt(dtStr) {
@@ -54,15 +82,25 @@ function fmtHours(h) {
 // Bootstrap
 // ---------------------------------------------------------------------
 async function init() {
-  const reqs = await api("/api/requisitions");
-  const req = reqs[0];
+  // Wire static UI first so controls (tabs, modal, error dismiss) work even
+  // when data loading fails -- e.g. a DB error, where the banner must be
+  // dismissable and the app must not be left half-initialised.
+  wireStaticControls();
+
+  let req;
+  try {
+    const reqs = await api("/api/requisitions");
+    req = reqs[0];
+  } catch (e) {
+    return; // api() already surfaced the error banner
+  }
   CURRENT_REQ_ID = req.id;
 
   document.getElementById("req-picker").innerHTML =
     `<strong>${req.title}</strong>${req.req_code} &middot; opened ${new Date(req.opened_date).toLocaleDateString()}`;
 
-  await Promise.all([loadSlaMonitor(), loadComparison()]);
-  wireStaticControls();
+  // allSettled: one view failing (e.g. its query errors) still lets the other load.
+  await Promise.allSettled([loadSlaMonitor(), loadComparison()]);
 }
 
 function wireStaticControls() {
@@ -71,6 +109,7 @@ function wireStaticControls() {
   document.querySelectorAll(".tab").forEach(t =>
     t.addEventListener("click", () => { activeTab = t.dataset.tab; render(); })
   );
+  document.getElementById("error-banner-close").addEventListener("click", hideError);
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-backdrop").addEventListener("click", (e) => {
     if (e.target.id === "modal-backdrop") closeModal();

@@ -21,10 +21,11 @@ try:
 except ImportError:
     pass
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from .database import Base, engine
 from .routers import requisitions, candidates, interviews
@@ -63,6 +64,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(SQLAlchemyError)
+async def db_error_handler(request: Request, exc: SQLAlchemyError):
+    """
+    Any database-layer failure (connection loss, query error, etc.) is turned
+    into a single clean message instead of leaking a 500 / stack trace to the
+    client. HTTPExceptions (e.g. 404 "not found") are unaffected -- they keep
+    their own detail. Matches the Eval Card's DB-error case.
+    """
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "System error! Please refresh and try again"},
+    )
+
 
 app.include_router(requisitions.router)
 app.include_router(candidates.router)

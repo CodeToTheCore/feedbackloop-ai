@@ -144,6 +144,20 @@ header{
   margin-top: 12px; display:flex; gap:10px; align-items:flex-start;
   background: rgba(111,168,138,0.08); border: 1px solid rgba(111,168,138,0.25); border-radius: 8px; padding: 11px 14px;
 }
+/* System-error banner (e.g. DB failure) -- fixed at top, persistent until dismissed/refresh */
+.error-banner{
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  background: var(--clay, #D5695D); color: #fff;
+  padding: 12px 18px; font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.35);
+}
+.error-banner button{
+  background: transparent; border: none; color: #fff; font-size: 20px; line-height: 1;
+  cursor: pointer; opacity: 0.85; padding: 0 4px;
+}
+.error-banner button:hover{ opacity: 1; }
+
 .history-note .icon{ color: var(--sage, #6FA88A); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
 .history-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
 .history-note .text strong{ color: var(--sage, #6FA88A); }
