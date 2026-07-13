@@ -12,6 +12,15 @@ Then open:
 """
 
 from pathlib import Path
+
+# Load .env before anything reads os.getenv (DATABASE_URL, ANTHROPIC_API_KEY, ...).
+# Safe no-op if python-dotenv isn't installed or there's no .env file.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
