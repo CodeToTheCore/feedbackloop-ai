@@ -12,6 +12,7 @@ let CURRENT_REQ_ID = null;
 let mode = "recruiter";
 let activeTab = "sla";
 let hmSelectedCandidateId = null;
+let reparticipationAlerted = false;  // fire the re-participation popup only once per load
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 20; // r=20
 
@@ -157,7 +158,8 @@ function renderRankCards() {
       : "";
     const historyNote = (r.history && r.history.length)
       ? `<div class="history-note"><span class="icon">&#8635;</span><span class="text">
-          Seen before: ${r.history.map(h => `${h.req_code} (${h.title}) &middot; reached ${h.stage_reached}, ${h.outcome.replace(/_/g, " ")}${h.date ? " &middot; " + h.date : ""}`).join("<br>")}
+          <strong>Re-participated candidate</strong><br>
+          ${r.history.map(h => `Prior: ${h.req_code} (${h.title}) &middot; reached ${h.stage_reached}, ${h.outcome.replace(/_/g, " ")}${h.date ? " &middot; " + h.date : ""}`).join("<br>")}
          </span></div>` : "";
     return `
       <div class="rank-card ${cardClass}" data-candidate-id="${r.candidate_id}">
@@ -367,6 +369,43 @@ function render() {
   document.getElementById("view-compare-hm").style.display = showCompareHm ? "block" : "none";
 
   if (showCompareHm) renderHmSummary();
+  if (showCompareRecruiter) maybeShowReparticipationAlert();
+}
+
+// ---------------------------------------------------------------------
+// Re-participated candidate alert: fires once when the recruiter's
+// Candidate Comparison view first loads, if any candidate has cross-req
+// history (get_candidate_history match). Alert + popup per the PRD follow-up.
+// ---------------------------------------------------------------------
+function maybeShowReparticipationAlert() {
+  if (reparticipationAlerted || !comparisonData) return;
+  const matches = comparisonData.ranking.filter(r => r.history && r.history.length);
+  if (!matches.length) return;
+  reparticipationAlerted = true;
+
+  openModal(`Re-participated candidate${matches.length > 1 ? "s" : ""} detected`);
+  const body = document.getElementById("modal-body");
+  body.innerHTML = `
+    <div class="modal-section">
+      <p class="reparticipation-lead">
+        ${matches.length} candidate${matches.length > 1 ? "s have" : " has"} interviewed with the company
+        before. Prior outcomes are surfaced below &mdash; verify against the full record before advancing.
+      </p>
+      ${matches.map(m => `
+        <div class="reparticipation-item">
+          <div class="reparticipation-name">${m.candidate_name}</div>
+          ${m.history.map(h => `<div class="reparticipation-hist">
+              ${h.req_code} &middot; ${h.title} &middot; reached ${h.stage_reached}, ${h.outcome.replace(/_/g, " ")}${h.date ? " &middot; " + h.date : ""}
+            </div>`).join("")}
+          <button class="reparticipation-view" data-candidate-id="${m.candidate_id}">View candidate record</button>
+        </div>`).join("")}
+      <div class="reparticipation-actions"><button id="reparticipation-dismiss">Dismiss</button></div>
+    </div>`;
+
+  body.querySelector("#reparticipation-dismiss").addEventListener("click", closeModal);
+  body.querySelectorAll(".reparticipation-view").forEach(b =>
+    b.addEventListener("click", () => openCandidateModal(b.dataset.candidateId))
+  );
 }
 
 init();

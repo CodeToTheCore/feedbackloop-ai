@@ -146,6 +146,27 @@ header{
 }
 .history-note .icon{ color: var(--sage, #6FA88A); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
 .history-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
+.history-note .text strong{ color: var(--sage, #6FA88A); }
+
+/* Re-participated candidate popup (auto-fires on comparison load when a match exists) */
+.reparticipation-lead{ font-size: 13.5px; line-height: 1.6; color: var(--text-dim); margin: 0 0 16px; }
+.reparticipation-item{
+  border: 1px solid rgba(111,168,138,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+  background: rgba(111,168,138,0.06);
+}
+.reparticipation-name{ font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.reparticipation-hist{ font-size: 13px; color: var(--text); line-height: 1.5; }
+.reparticipation-view{
+  margin-top: 10px; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--sage, #6FA88A); border: 1px solid rgba(111,168,138,0.4);
+}
+.reparticipation-view:hover{ background: rgba(111,168,138,0.12); }
+.reparticipation-actions{ display: flex; justify-content: flex-end; margin-top: 4px; }
+#reparticipation-dismiss{
+  font-size: 13px; padding: 8px 18px; border-radius: 6px; cursor: pointer;
+  background: var(--sage, #6FA88A); color: #fff; border: none;
+}
+#reparticipation-dismiss:hover{ filter: brightness(1.05); }
 
 .hm-picker{ display:flex; gap:8px; margin-bottom: 18px; flex-wrap:wrap; }
 .hm-picker button{
