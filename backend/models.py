@@ -60,14 +60,22 @@ class Candidate(Base):
     name = Column(String, nullable=False)
     stage = Column(String, default="onsite")
 
-    # Identity key for cross-req history matching (get_candidate_history, PRD 3a).
-    # History is matched on name + normalized email; when email is absent the
-    # lookup returns no match rather than guessing on name alone (PRD 3c safeguard).
+    # Stable per-person identity across requisitions (the ATS's global candidate
+    # id). Cross-req history is matched on this, NOT on email -- email is a
+    # corroboration/conflict signal layered on top (see agent.get_candidate_history):
+    #   same person_id, different email  -> same person, contact info changed (2b)
+    #   same email, different person_id  -> email reuse across identities (2a, fraud)
+    person_id = Column(String, nullable=True, index=True)
     email = Column(String, nullable=True, index=True)
 
     # Terminal outcome on THIS req, once decided -- what a *later* req's history
     # lookup surfaces (e.g. "no_hire"). Null while the candidate is still in flight.
     outcome = Column(String, nullable=True)
+
+    # Set when a recruiter marks this record fraudulent (2a: email shared with a
+    # different identity). Recruiter-driven, never automatic.
+    fraud_flagged = Column(Boolean, default=False)
+    fraud_reason = Column(Text, nullable=True)
 
     requisition = relationship("Requisition", back_populates="candidates")
     interviews = relationship("Interview", back_populates="candidate", cascade="all, delete-orphan")

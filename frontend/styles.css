@@ -162,6 +162,43 @@ header{
 .history-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
 .history-note .text strong{ color: var(--sage, #6FA88A); }
 
+/* 2b: same person, different email -> verify/switch (amber) */
+.switch-note{
+  margin-top: 12px; display:flex; gap:10px; align-items:flex-start;
+  background: rgba(232,163,61,0.08); border: 1px solid rgba(232,163,61,0.3); border-radius: 8px; padding: 11px 14px;
+}
+.switch-note .icon{ color: var(--gold, #E8A33D); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
+.switch-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
+.switch-note .text strong{ color: var(--gold, #E8A33D); }
+
+/* 2a: shared email across identities -> possible fraud (clay) */
+.fraud-note{
+  margin-top: 12px; display:flex; gap:10px; align-items:flex-start;
+  background: rgba(213,105,93,0.08); border: 1px solid rgba(213,105,93,0.3); border-radius: 8px; padding: 11px 14px;
+}
+.fraud-note.flagged{ background: rgba(213,105,93,0.16); border-color: rgba(213,105,93,0.55); }
+.fraud-note .icon{ color: var(--clay, #D5695D); font-family: var(--font-mono); font-weight:700; font-size:13px; margin-top:1px; }
+.fraud-note .text{ font-size: 13px; color: var(--text); line-height:1.5; }
+.fraud-note .text strong{ color: var(--clay, #D5695D); }
+
+.note-action{
+  display: inline-block; margin-top: 8px; font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text); border: 1px solid var(--border-soft);
+}
+.note-action:hover{ background: rgba(255,255,255,0.05); }
+.note-action.danger{ color: var(--clay, #D5695D); border-color: rgba(213,105,93,0.5); }
+.note-action.danger:hover{ background: rgba(213,105,93,0.12); }
+
+/* Confirm modal (fraud flag / email switch) */
+.confirm-message{ font-size: 13.5px; line-height: 1.6; color: var(--text); margin: 0 0 18px; }
+.confirm-actions{ display: flex; justify-content: flex-end; gap: 10px; }
+.confirm-actions button{ font-size: 13px; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+#confirm-cancel{ background: transparent; color: var(--text-dim); border: 1px solid var(--border-soft); }
+#confirm-cancel:hover{ background: rgba(255,255,255,0.05); }
+.confirm-actions button.danger{ background: var(--clay, #D5695D); color: #fff; border: none; }
+.confirm-actions button.danger:hover{ filter: brightness(1.05); }
+.confirm-actions button:disabled{ opacity: 0.6; cursor: default; }
+
 /* Re-participated candidate popup (auto-fires on comparison load when a match exists) */
 .reparticipation-lead{ font-size: 13.5px; line-height: 1.6; color: var(--text-dim); margin: 0 0 16px; }
 .reparticipation-item{

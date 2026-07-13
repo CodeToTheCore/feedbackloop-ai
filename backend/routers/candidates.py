@@ -68,15 +68,67 @@ def candidate_full_detail(candidate_id: int, db: Session = Depends(get_db)):
 @router.get("/{candidate_id}/history")
 def candidate_history(candidate_id: int, db: Session = Depends(get_db)):
     """
-    Maps to the get_candidate_history tool (PRD 3a): read-only, cross-requisition.
-    Returns prior requisitions this same candidate (name + normalized email)
-    appears on, with the stage reached and outcome. Empty list when there is no
+    Cross-requisition identity resolution (get_candidate_history tool, PRD 3a).
+    Keyed on person_id; returns same-person history plus two email signals:
+    email_update (2b: same person, changed email) and email_conflict (2a: same
+    email on a different identity -> possible fraud). Empty/null when there's no
     confident match -- never a name-only guess.
     """
     cand = db.query(models.Candidate).filter(models.Candidate.id == candidate_id).first()
     if not cand:
         raise HTTPException(404, "Candidate not found")
-    return {"candidate_id": cand.id, "history": agent.get_candidate_history(db, cand)}
+    identity = agent.resolve_candidate_identity(db, cand)
+    return {
+        "candidate_id": cand.id,
+        "fraud_flagged": bool(cand.fraud_flagged),
+        "fraud_reason": cand.fraud_reason,
+        **identity,
+    }
+
+
+@router.patch("/{candidate_id}", response_model=schemas.CandidateOut)
+def update_candidate_email(candidate_id: int, body: schemas.EmailUpdateRequest,
+                           db: Session = Depends(get_db)):
+    """
+    2b write: reconcile a person's email after the recruiter verifies the switch.
+    Updates just this record's email so future person_id matches no longer report
+    an email mismatch. Intentionally narrow -- email only.
+    """
+    cand = db.query(models.Candidate).filter(models.Candidate.id == candidate_id).first()
+    if not cand:
+        raise HTTPException(404, "Candidate not found")
+    new_email = (body.email or "").strip()
+    if not new_email:
+        raise HTTPException(422, "Email must not be empty")
+    try:
+        cand.email = new_email
+        db.commit()
+        db.refresh(cand)
+    except Exception:
+        db.rollback()
+        raise
+    return cand
+
+
+@router.post("/{candidate_id}/flag-fraud", response_model=schemas.CandidateOut)
+def flag_candidate_fraud(candidate_id: int, body: schemas.FraudFlagRequest,
+                         db: Session = Depends(get_db)):
+    """
+    2a write: recruiter marks this record fraudulent (email shared with a
+    different identity). Recruiter-driven, never automatic.
+    """
+    cand = db.query(models.Candidate).filter(models.Candidate.id == candidate_id).first()
+    if not cand:
+        raise HTTPException(404, "Candidate not found")
+    try:
+        cand.fraud_flagged = True
+        cand.fraud_reason = (body.reason or "").strip() or "Email shared with a different candidate identity."
+        db.commit()
+        db.refresh(cand)
+    except Exception:
+        db.rollback()
+        raise
+    return cand
 
 
 @router.get("/{candidate_id}/summary")

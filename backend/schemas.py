@@ -68,6 +68,9 @@ class CandidateOut(BaseModel):
     name: str
     stage: str
     email: Optional[str] = None
+    person_id: Optional[str] = None
+    fraud_flagged: bool = False
+    fraud_reason: Optional[str] = None
 
 
 class RequisitionOut(BaseModel):
@@ -82,3 +85,13 @@ class RequisitionOut(BaseModel):
 class RemindRequest(BaseModel):
     """Body for POST /api/interviews/{id}/remind — kept minimal on purpose."""
     channel: Optional[str] = "slack"
+
+
+class EmailUpdateRequest(BaseModel):
+    """Body for PATCH /api/candidates/{id} — reconcile a person's email (2b switch)."""
+    email: str
+
+
+class FraudFlagRequest(BaseModel):
+    """Body for POST /api/candidates/{id}/flag-fraud (2a). Reason is optional."""
+    reason: Optional[str] = None

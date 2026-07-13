@@ -164,16 +164,30 @@ def _normalize_email(email: str | None) -> str | None:
     return email.strip().lower() if email and email.strip() else None
 
 
-def get_candidate_history(db: Session, candidate: models.Candidate) -> list[dict]:
+def _pid(candidate: models.Candidate) -> str | None:
+    return candidate.person_id.strip() if candidate.person_id and candidate.person_id.strip() else None
+
+
+def resolve_candidate_identity(db: Session, candidate: models.Candidate) -> dict:
     """
-    Looks up whether this candidate appears on ANY other requisition, matched on
-    name + normalized email. Precision over recall by design (PRD 3c): if the
-    candidate has no email we return nothing rather than matching on name alone,
-    so we never attach a different person's history to this candidate.
+    Resolves this candidate against every OTHER requisition and returns three
+    signals. Identity is keyed on person_id (the ATS's stable per-person id);
+    email is only a corroboration/conflict signal on top:
+
+      history        -- other reqs for the SAME person (person_id match), each
+                        with the stage reached + outcome. This is what a clean
+                        "re-participated candidate" is built from.
+      email_update   -- 2b: same person_id, but an older record has a DIFFERENT
+                        email. Surfaces a verify/switch prompt so the recruiter
+                        can reconcile contact info. Includes the record id to PATCH.
+      email_conflict -- 2a: the SAME email is attached to a DIFFERENT person_id.
+                        Email reuse across identities -> possible fraud. The
+                        conflicting record is NEVER attached as history.
+
+    No person_id -> no identity claims at all (we never guess on name alone).
     """
+    pid = _pid(candidate)
     norm_email = _normalize_email(candidate.email)
-    if not norm_email:
-        return []
 
     others = (
         db.query(models.Candidate)
@@ -182,24 +196,53 @@ def get_candidate_history(db: Session, candidate: models.Candidate) -> list[dict
         .all()
     )
 
-    history = []
+    history, update_records, conflict_records = [], [], []
     for other in others:
-        if _normalize_email(other.email) != norm_email:
-            continue
-        if other.name.strip().lower() != candidate.name.strip().lower():
-            continue  # same email, different name -> treat as ambiguous, skip
+        other_pid = _pid(other)
+        other_email = _normalize_email(other.email)
         req = other.requisition
-        history.append({
-            "req_code": req.req_code if req else None,
-            "title": req.title if req else None,
-            "stage_reached": other.stage,
-            "outcome": other.outcome or "in_progress",
-            "date": req.opened_date.date().isoformat() if req and req.opened_date else None,
-        })
 
-    # Most recent prior req first.
+        same_person = pid and other_pid and other_pid == pid
+        diff_person = pid and other_pid and other_pid != pid
+        same_email = norm_email and other_email and other_email == norm_email
+
+        if same_person:
+            history.append({
+                "candidate_id": other.id,
+                "req_code": req.req_code if req else None,
+                "title": req.title if req else None,
+                "stage_reached": other.stage,
+                "outcome": other.outcome or "in_progress",
+                "date": req.opened_date.date().isoformat() if req and req.opened_date else None,
+            })
+            if other_email and other_email != norm_email:  # 2b: same person, email changed
+                update_records.append({
+                    "candidate_id": other.id,
+                    "req_code": req.req_code if req else None,
+                    "email": other.email,
+                })
+        elif same_email and diff_person:  # 2a: email reuse across identities
+            conflict_records.append({
+                "candidate_id": other.id,
+                "name": other.name,
+                "req_code": req.req_code if req else None,
+                "person_id": other_pid,
+            })
+
     history.sort(key=lambda h: h["date"] or "", reverse=True)
-    return history
+
+    return {
+        "history": history,
+        "email_update": ({"current_email": candidate.email, "records": update_records}
+                         if update_records else None),
+        "email_conflict": ({"conflicting_email": candidate.email, "records": conflict_records}
+                           if conflict_records else None),
+    }
+
+
+def get_candidate_history(db: Session, candidate: models.Candidate) -> list[dict]:
+    """Back-compat shim: just the same-person history list."""
+    return resolve_candidate_identity(db, candidate)["history"]
 
 
 # ---------------------------------------------------------------------
@@ -259,8 +302,9 @@ def compare_candidates(db: Session, requisition: models.Requisition) -> list[dic
         else:
             label = "Lean No Hire"
 
-        # NEW: cross-req history + structured summary -> LLM rationale.
-        history = get_candidate_history(db, cand)
+        # NEW: cross-req identity resolution + structured summary -> LLM rationale.
+        identity = resolve_candidate_identity(db, cand)
+        history = identity["history"]
         matched_criteria = _matched_criteria(synthesis, requisition.criteria)
         payload = _build_synthesis_payload(cand.name, synthesis, label, signal_score,
                                            matched_criteria, history)
@@ -275,6 +319,10 @@ def compare_candidates(db: Session, requisition: models.Requisition) -> list[dic
             "excluded": synthesis["excluded"],
             "num_scorecards_in": len(synthesis["scores"]),
             "history": history,
+            "email_update": identity["email_update"],      # 2b: verify/switch prompt
+            "email_conflict": identity["email_conflict"],   # 2a: possible fraud
+            "fraud_flagged": bool(cand.fraud_flagged),
+            "fraud_reason": cand.fraud_reason,
             "rationale": rationale,
         })
 

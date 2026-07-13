@@ -70,15 +70,24 @@ def run():
     db.commit()
     db.refresh(prior_req)
 
-    db.add(models.Candidate(
-        req_id=prior_req.id, name="Jordan Reyes", stage="onsite",
-        email="jordan.reyes@example.com", outcome="no_hire",
-    ))
+    db.add_all([
+        # Jordan Reyes -- clean re-participation (person_id matches his current record).
+        models.Candidate(req_id=prior_req.id, name="Jordan Reyes", stage="onsite",
+                         person_id="P-1001", email="jordan.reyes@example.com", outcome="no_hire"),
+        # Dana Lee -- SAME person as the current Dana (P-3001) but an older email on file.
+        # Drives Case 2b: same person_id, different email -> verify/switch prompt.
+        models.Candidate(req_id=prior_req.id, name="Dana Lee", stage="phone_screen",
+                         person_id="P-3001", email="dana.lee@oldmail.com", outcome="no_hire"),
+        # Chris Doe -- a DIFFERENT person (P-4002) who shares an email with the current
+        # Sam Rivera. Drives Case 2a: same email, different person_id -> possible fraud.
+        models.Candidate(req_id=prior_req.id, name="Chris Doe", stage="onsite",
+                         person_id="P-4002", email="shared.address@example.com", outcome="hired"),
+    ])
     db.commit()
 
     # ---------------- Candidate 1: Priya Patel (Eval Case 1 -- golden/normal) ----------------
     priya = models.Candidate(req_id=req.id, name="Priya Patel", stage="onsite",
-                             email="priya.patel@example.com")
+                             person_id="P-1002", email="priya.patel@example.com")
     db.add(priya)
     db.commit()
     db.refresh(priya)
@@ -109,7 +118,7 @@ def run():
 
     # ---------------- Candidate 2: Jordan Reyes (Eval Case 2 -- conflicting feedback) --------
     jordan = models.Candidate(req_id=req.id, name="Jordan Reyes", stage="onsite",
-                              email="jordan.reyes@example.com")
+                              person_id="P-1001", email="jordan.reyes@example.com")
     db.add(jordan)
     db.commit()
     db.refresh(jordan)
@@ -145,7 +154,7 @@ def run():
 
     # ---------------- Candidate 3: Marcus Chen (Eval Case 3 -- adversarial injection) --------
     marcus = models.Candidate(req_id=req.id, name="Marcus Chen", stage="onsite",
-                              email="marcus.chen@example.com")
+                              person_id="P-1003", email="marcus.chen@example.com")
     db.add(marcus)
     db.commit()
     db.refresh(marcus)
@@ -172,8 +181,54 @@ def run():
         ))
     db.commit()
 
+    # ---------------- Candidate 4: Dana Lee (Eval Case 2b -- same person, new email) ----------
+    # Same person_id as the prior Dana (P-3001) but a NEW email. The comparison view
+    # will surface her as re-participated AND prompt the recruiter to verify/switch
+    # the older email on file.
+    dana = models.Candidate(req_id=req.id, name="Dana Lee", stage="onsite",
+                            person_id="P-3001", email="dana.lee@newmail.com")
+    db.add(dana)
+    db.commit()
+    db.refresh(dana)
+
+    # ---------------- Candidate 5: Sam Rivera (Eval Case 2a -- shared email, other identity) --
+    # Shares an email with Chris Doe (P-4002) from REQ-4201, but is a different
+    # person_id (P-4001). Drives the possible-fraud path + "Mark as fraudulent".
+    sam = models.Candidate(req_id=req.id, name="Sam Rivera", stage="onsite",
+                           person_id="P-4001", email="shared.address@example.com")
+    db.add(sam)
+    db.commit()
+    db.refresh(sam)
+
+    # Give the two new candidates clean scorecards so they get a real label.
+    extra_scorecards = [
+        (dana, "R. Alvarez", "Staff Engineer", "Strong Yes",
+         "Strong distributed systems background; walked through ledger partitioning well."),
+        (dana, "T. Okafor", "Engineering Manager", "Yes",
+         "Owned on-call for a payments service; solid incident handling."),
+        (sam, "D. Whitfield", "Senior Engineer", "Yes",
+         "Good fundamentals on distributed systems; reasonable on-call ownership."),
+        (sam, "S. Nakamura", "Staff Engineer", "Yes",
+         "Clear system design; payments experience is adequate for the role."),
+    ]
+    for cand, iname, irole, score, fb in extra_scorecards:
+        iv = models.Interview(
+            candidate_id=cand.id, interviewer_name=iname, interviewer_role=irole,
+            panel_stage="onsite", scheduled_time=now - timedelta(hours=22),
+            feedback_due=now - timedelta(hours=22) + timedelta(hours=24),
+        )
+        db.add(iv)
+        db.commit()
+        db.refresh(iv)
+        db.add(models.Scorecard(
+            interview_id=iv.id, status="submitted", score=score, written_feedback=fb,
+            submitted_at=now - timedelta(hours=2),
+        ))
+    db.commit()
+
     print(f"Seeded: {req.req_code} -- {req.title}")
-    print(f"  Candidates: {[c.name for c in [priya, jordan, marcus]]}")
+    print(f"  Candidates: {[c.name for c in [priya, jordan, marcus, dana, sam]]}")
+    print(f"  Prior req {prior_req.req_code}: Jordan Reyes, Dana Lee (old email), Chris Doe")
     print("Database ready.")
     db.close()
 

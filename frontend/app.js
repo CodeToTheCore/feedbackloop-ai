@@ -200,6 +200,28 @@ function renderRankCards() {
           <strong>Re-participated candidate</strong><br>
           ${r.history.map(h => `Prior: ${h.req_code} (${h.title}) &middot; reached ${h.stage_reached}, ${h.outcome.replace(/_/g, " ")}${h.date ? " &middot; " + h.date : ""}`).join("<br>")}
          </span></div>` : "";
+
+    // Case 2b: same person, different email on file -> verify/switch prompt.
+    const emailUpdateNote = (r.email_update && !r.fraud_flagged)
+      ? `<div class="switch-note"><span class="icon">&#9998;</span><span class="text">
+          <strong>Different email on file</strong><br>
+          Same person previously used ${r.email_update.records.map(x => `${x.email} (${x.req_code})`).join(", ")}.
+          Current: ${r.email_update.current_email}.
+          <button class="note-action" data-action="switch-email" data-candidate-id="${r.candidate_id}">Verify &amp; switch</button>
+         </span></div>` : "";
+
+    // Case 2a: same email on a different identity -> possible fraud.
+    const fraudNote = r.fraud_flagged
+      ? `<div class="fraud-note flagged"><span class="icon">&#9873;</span><span class="text">
+          <strong>Flagged as fraudulent</strong><br>${r.fraud_reason || ""}
+         </span></div>`
+      : (r.email_conflict
+        ? `<div class="fraud-note"><span class="icon">&#9888;</span><span class="text">
+            <strong>Possible fraud &mdash; shared email</strong><br>
+            ${r.email_conflict.conflicting_email} is also on file for a different identity:
+            ${r.email_conflict.records.map(x => `${x.name} (${x.req_code})`).join(", ")}. No prior history attached.
+            <button class="note-action danger" data-action="flag-fraud" data-candidate-id="${r.candidate_id}">Mark as fraudulent</button>
+           </span></div>` : "");
     return `
       <div class="rank-card ${cardClass}" data-candidate-id="${r.candidate_id}">
         <div class="rank-card-head">
@@ -212,13 +234,95 @@ function renderRankCards() {
             <div class="score-label">signal score ${r.signal_score}</div></div>
         </div>
         <div class="rationale">${r.rationale}</div>
-        ${conflictNote}${historyNote}${excludedNote}
+        ${conflictNote}${historyNote}${emailUpdateNote}${fraudNote}${excludedNote}
       </div>`;
   }).join("");
+
+  // Note-action buttons must not bubble up to the card's record-modal click.
+  el.querySelectorAll(".note-action").forEach(btn =>
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.candidateId;
+      if (btn.dataset.action === "flag-fraud") confirmFlagFraud(id);
+      else if (btn.dataset.action === "switch-email") confirmSwitchEmail(id);
+    })
+  );
 
   el.querySelectorAll(".rank-card").forEach(card =>
     card.addEventListener("click", () => openCandidateModal(card.dataset.candidateId))
   );
+}
+
+// ---------------------------------------------------------------------
+// 2a/2b identity actions (fraud flag + email switch), each behind a confirm
+// prompt. On success we reload the comparison so the card reflects the new state.
+// ---------------------------------------------------------------------
+function findRanked(candidateId) {
+  return comparisonData.ranking.find(r => String(r.candidate_id) === String(candidateId));
+}
+
+function confirmFlagFraud(candidateId) {
+  const r = findRanked(candidateId);
+  const who = r.email_conflict ? r.email_conflict.records.map(x => `${x.name} (${x.req_code})`).join(", ") : "another identity";
+  confirmModal(
+    "Mark as fraudulent?",
+    `${r.candidate_name}'s email (${r.email_conflict ? r.email_conflict.conflicting_email : ""}) is shared with ${who}. ` +
+      `Marking this record fraudulent flags it for review. This is a recruiter decision and can be seen by others.`,
+    "Mark as fraudulent",
+    async () => {
+      await api(`/api/candidates/${candidateId}/flag-fraud`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: `Email shared with ${who}.` }),
+      });
+      await loadComparison();
+    }
+  );
+}
+
+function confirmSwitchEmail(candidateId) {
+  const r = findRanked(candidateId);
+  const target = r.email_update.current_email;
+  const stale = r.email_update.records;
+  confirmModal(
+    "Verify & switch email?",
+    `This is the same person across requisitions, but ${stale.map(x => `${x.email} (${x.req_code})`).join(", ")} ` +
+      `differs from the current ${target}. Confirm it's the same person to reconcile the older record(s) to ${target}.`,
+    "Switch to current email",
+    async () => {
+      for (const rec of stale) {
+        await api(`/api/candidates/${rec.candidate_id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: target }),
+        });
+      }
+      await loadComparison();
+    }
+  );
+}
+
+function confirmModal(title, message, confirmLabel, onConfirm) {
+  openModal(title);
+  const body = document.getElementById("modal-body");
+  body.innerHTML = `
+    <div class="modal-section">
+      <p class="confirm-message">${message}</p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel">Cancel</button>
+        <button id="confirm-ok" class="danger">${confirmLabel}</button>
+      </div>
+    </div>`;
+  body.querySelector("#confirm-cancel").addEventListener("click", closeModal);
+  body.querySelector("#confirm-ok").addEventListener("click", async () => {
+    const ok = body.querySelector("#confirm-ok");
+    ok.disabled = true;
+    try {
+      await onConfirm();
+      closeModal();
+    } catch (e) {
+      // api() already showed the error banner; leave the modal open to retry.
+      ok.disabled = false;
+    }
+  });
 }
 
 function labelColor(label) {
