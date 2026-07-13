@@ -199,6 +199,65 @@ header{
 .confirm-actions button.danger:hover{ filter: brightness(1.05); }
 .confirm-actions button:disabled{ opacity: 0.6; cursor: default; }
 
+/* SLA row scorecard link */
+.scorecard-link{ color: var(--sage); text-decoration: none; font-size: 12px; margin-top: 4px; display: inline-block; }
+.scorecard-link:hover{ text-decoration: underline; }
+
+/* Recruiter debrief header on the comparison view */
+.debrief{
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.debrief-title{ font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; }
+.debrief-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.debrief-col{ display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--border); padding-left: 10px; }
+.debrief-col.advance{ border-left-color: var(--sage); }
+.debrief-col.decide{ border-left-color: var(--amber); }
+.debrief-col.flagged{ border-left-color: var(--clay); }
+.debrief-col.hold{ border-left-color: var(--text-faint); }
+.debrief-col .dl{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+.debrief-col .dv{ font-size: 14px; color: var(--text); font-weight: 600; }
+@media (max-width: 820px){ .debrief-grid{ grid-template-columns: repeat(2, 1fr); } }
+
+/* Interviewer scorecard dashboard (link-routed full page) */
+.iv-wrap{ max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+.iv-card{ background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 30px; }
+.iv-brand{ display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.iv-brand-title{ font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text); }
+.iv-brand-sub{ font-size: 12px; color: var(--text-dim); }
+.iv-candidate{ font-family: var(--font-display); font-size: 26px; margin: 0 0 6px; color: var(--text); }
+.iv-sub{ font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.iv-section-label{ font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); margin: 24px 0 10px; }
+.iv-criteria{ display: flex; flex-direction: column; gap: 12px; }
+.iv-crit-group{ background: var(--surface-raised); border: 1px solid var(--border-soft); border-radius: 10px; padding: 12px 14px; }
+.iv-crit-label{ font-size: 12px; color: var(--sage); font-weight: 700; }
+.iv-crit-group ul{ margin: 8px 0 0; padding-left: 18px; }
+.iv-crit-group li{ font-size: 13.5px; color: var(--text); line-height: 1.6; }
+
+.iv-field-label{ display: block; font-size: 13px; color: var(--text); font-weight: 600; margin: 16px 0 8px; }
+.iv-score-options{ display: flex; flex-wrap: wrap; gap: 10px; }
+.iv-score-opt{ display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text);
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.iv-score-opt:hover{ border-color: var(--sage); }
+.iv-notes{ width: 100%; box-sizing: border-box; background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; resize: vertical; }
+.iv-notes:focus{ outline: none; border-color: var(--sage); }
+.iv-actions{ margin-top: 18px; }
+.iv-submit{ background: var(--sage); color: #10231A; border: none; border-radius: 8px; padding: 11px 20px;
+  font-size: 14px; font-weight: 700; cursor: pointer; }
+.iv-submit:hover{ filter: brightness(1.06); }
+.iv-submit.ghost{ background: transparent; color: var(--sage); border: 1px solid rgba(111,168,138,0.5); }
+.iv-msg{ margin-top: 12px; font-size: 13px; color: var(--text-dim); }
+.iv-msg.error{ color: var(--clay); }
+
+.iv-review-head{ font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
+.iv-badge{ background: rgba(111,168,138,0.15); color: var(--sage); border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+.iv-review-score{ font-size: 15px; color: var(--text); margin-bottom: 12px; }
+.iv-review-notes{ background: var(--surface-raised); border: 1px solid var(--border-soft); border-radius: 10px;
+  padding: 14px; font-size: 14px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
+.iv-flag{ margin-top: 12px; background: rgba(213,105,93,0.1); border: 1px solid rgba(213,105,93,0.3);
+  border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--text); line-height: 1.5; }
+
 /* Re-participated candidate popup (auto-fires on comparison load when a match exists) */
 .reparticipation-lead{ font-size: 13.5px; line-height: 1.6; color: var(--text-dim); margin: 0 0 16px; }
 .reparticipation-item{

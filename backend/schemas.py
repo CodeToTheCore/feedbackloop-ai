@@ -87,6 +87,12 @@ class RemindRequest(BaseModel):
     channel: Optional[str] = "slack"
 
 
+class ScorecardSubmit(BaseModel):
+    """Body for POST /api/interviews/{id}/scorecard — the interviewer's notes."""
+    score: str
+    written_feedback: str = ""
+
+
 class EmailUpdateRequest(BaseModel):
     """Body for PATCH /api/candidates/{id} — reconcile a person's email (2b switch)."""
     email: str

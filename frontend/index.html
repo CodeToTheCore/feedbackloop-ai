@@ -43,6 +43,7 @@
   <div id="view-sla"><div class="sla-grid" id="sla-grid"></div></div>
 
   <div id="view-compare" style="display:none;">
+    <div id="compare-debrief"></div>
     <div class="criteria-strip" id="criteria-strip"></div>
     <div id="rank-cards"></div>
   </div>
@@ -60,6 +61,9 @@
 
   <footer>FeedbackLoop AI &middot; live FastAPI + SQLite backend &middot; sample data seeded from PRD Eval Card</footer>
 </div>
+
+<!-- Interviewer scorecard dashboard: opened via the agent's reminder link (/?interview={id}) -->
+<div id="interviewer-view" style="display:none;"></div>
 
 <!-- Deep-dive modal: raw DB record inspector -->
 <div id="modal-backdrop" class="modal-backdrop" style="display:none;">

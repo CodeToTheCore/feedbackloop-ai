@@ -87,6 +87,14 @@ async function init() {
   // dismissable and the app must not be left half-initialised.
   wireStaticControls();
 
+  // Interviewer link (?interview={id}) -> show only the scorecard dashboard.
+  const ivId = new URLSearchParams(location.search).get("interview");
+  if (ivId) {
+    document.querySelector(".app").style.display = "none";
+    await renderInterviewerView(ivId);
+    return;
+  }
+
   let req;
   try {
     const reqs = await api("/api/requisitions");
@@ -152,10 +160,14 @@ function renderSlaGrid() {
         <div class="action-cell">
           <span class="time">Due ${fmt(row.feedback_due)}</span>
           <span class="action">${row.reminder_count} reminder(s) sent &middot; click for detail</span>
+          <a class="scorecard-link" href="/?interview=${row.interview_id}" target="_blank" rel="noopener">add / review notes &#8599;</a>
         </div>
       </div>`;
   }).join("");
 
+  grid.querySelectorAll(".scorecard-link").forEach(a =>
+    a.addEventListener("click", e => e.stopPropagation())  // don't open the record modal
+  );
   grid.querySelectorAll(".sla-row").forEach(el =>
     el.addEventListener("click", () => openInterviewModal(el.dataset.interviewId))
   );
@@ -169,6 +181,7 @@ let comparisonData = null;
 async function loadComparison() {
   comparisonData = await api(`/api/requisitions/${CURRENT_REQ_ID}/comparison`);
   document.getElementById("count-compare").textContent = `${comparisonData.ranking.length} candidates`;
+  renderDebrief();
   renderCriteriaStrip();
   renderRankCards();
   renderHmPicker();
@@ -447,8 +460,10 @@ async function openInterviewModal(interviewId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ channel: "slack" }),
     });
-    document.getElementById("remind-result").textContent =
-      `action: ${result.action}${result.reason ? " — " + result.reason : ""}`;
+    const link = result.scorecard_url
+      ? ` &middot; <a href="${result.scorecard_url}" target="_blank" rel="noopener">open interviewer scorecard &#8599;</a>` : "";
+    document.getElementById("remind-result").innerHTML =
+      `action: ${result.action}${result.reason ? " — " + result.reason : ""}${link}`;
     await loadSlaMonitor(); // refresh underlying rows so the rate limit is visibly enforced
   });
 }
@@ -549,6 +564,126 @@ function maybeShowReparticipationAlert() {
   body.querySelectorAll(".reparticipation-view").forEach(b =>
     b.addEventListener("click", () => openCandidateModal(b.dataset.candidateId))
   );
+}
+
+// ---------------------------------------------------------------------
+// Interviewer scorecard dashboard (opened via the agent's reminder link).
+// Lets a panelist add notes and review the notes they've made.
+// ---------------------------------------------------------------------
+const SCORE_OPTIONS = ["Strong Yes", "Yes", "No", "Strong No"];
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function renderInterviewerView(interviewId) {
+  const view = document.getElementById("interviewer-view");
+  view.style.display = "block";
+  let data;
+  try {
+    data = await api(`/api/interviews/${interviewId}/scorecard-view`);
+  } catch (e) {
+    view.innerHTML = `<div class="iv-wrap"><div class="iv-card"><h1 class="iv-candidate">Scorecard unavailable</h1>
+      <div class="iv-sub">We couldn't load this interview. Please check the link and try again.</div></div></div>`;
+    return;
+  }
+  renderInterviewerCard(interviewId, data, false);
+}
+
+function renderInterviewerCard(interviewId, data, editing) {
+  const view = document.getElementById("interviewer-view");
+  const sc = data.scorecard;
+  const submitted = sc && sc.status === "submitted";
+  const musts = data.criteria.filter(c => c.category === "must_have");
+  const nices = data.criteria.filter(c => c.category === "nice_to_have");
+  const showForm = !submitted || editing;
+
+  const critHtml = `
+    <div class="iv-criteria">
+      <div class="iv-crit-group"><span class="iv-crit-label">Must-have</span>
+        <ul>${musts.map(c => `<li>${c.text}</li>`).join("")}</ul></div>
+      ${nices.length ? `<div class="iv-crit-group"><span class="iv-crit-label">Nice-to-have</span>
+        <ul>${nices.map(c => `<li>${c.text}</li>`).join("")}</ul></div>` : ""}
+    </div>`;
+
+  const bodyHtml = showForm
+    ? `<form id="iv-form" class="iv-form">
+        <div class="iv-field-label">Your recommendation</div>
+        <div class="iv-score-options">
+          ${SCORE_OPTIONS.map(o => `<label class="iv-score-opt">
+            <input type="radio" name="score" value="${o}" ${sc && sc.score === o ? "checked" : ""}> ${o}</label>`).join("")}
+        </div>
+        <label class="iv-field-label" for="iv-notes">Your notes</label>
+        <textarea id="iv-notes" class="iv-notes" rows="6"
+          placeholder="What did you assess? Be specific against the criteria above.">${sc && sc.written_feedback ? escapeHtml(sc.written_feedback) : ""}</textarea>
+        <div class="iv-actions"><button type="submit" class="iv-submit">${submitted ? "Update my notes" : "Submit scorecard"}</button></div>
+        <div class="iv-msg" id="iv-msg"></div>
+      </form>`
+    : `<div class="iv-review">
+        <div class="iv-review-head"><span class="iv-badge">Submitted</span>${sc.submitted_at ? " on " + new Date(sc.submitted_at).toLocaleString() : ""}</div>
+        <div class="iv-review-score">Recommendation: <strong>${sc.score}</strong></div>
+        <div class="iv-review-notes">${sc.written_feedback ? escapeHtml(sc.written_feedback) : "(no written notes)"}</div>
+        ${sc.flagged_injection ? `<div class="iv-flag">This note was flagged as a possible embedded instruction and excluded from the candidate synthesis. If this was a genuine evaluation, please rephrase and resubmit.</div>` : ""}
+        <div class="iv-actions"><button id="iv-edit" class="iv-submit ghost">Update my notes</button></div>
+      </div>`;
+
+  view.innerHTML = `
+    <div class="iv-wrap">
+      <div class="iv-card">
+        <div class="iv-brand"><div class="brand-mark">FL</div>
+          <div><div class="iv-brand-title">FeedbackLoop AI</div><div class="iv-brand-sub">Interview scorecard</div></div></div>
+        <h1 class="iv-candidate">${data.candidate_name}</h1>
+        <div class="iv-sub">${data.req_code} &middot; ${data.title} &middot; ${data.interview.panel_stage} panel</div>
+        <div class="iv-sub">You: ${data.interview.interviewer_name} (${data.interview.interviewer_role}) &middot; feedback due ${new Date(data.interview.feedback_due).toLocaleString()}</div>
+        <div class="iv-section-label">Assess against the intake criteria</div>
+        ${critHtml}
+        <div class="iv-section-label">${showForm ? "Add your notes" : "Your submitted notes"}</div>
+        ${bodyHtml}
+      </div>
+    </div>`;
+
+  if (showForm) {
+    document.getElementById("iv-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const picked = view.querySelector('input[name="score"]:checked');
+      const msg = document.getElementById("iv-msg");
+      if (!picked) { msg.textContent = "Please choose a recommendation."; msg.className = "iv-msg error"; return; }
+      try {
+        await api(`/api/interviews/${interviewId}/scorecard`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ score: picked.value, written_feedback: document.getElementById("iv-notes").value }),
+        });
+        const fresh = await api(`/api/interviews/${interviewId}/scorecard-view`);
+        renderInterviewerCard(interviewId, fresh, false);  // -> review state
+      } catch (err) { /* api() already surfaced the error banner */ }
+    });
+  } else {
+    document.getElementById("iv-edit").addEventListener("click", () =>
+      renderInterviewerCard(interviewId, data, true));
+  }
+}
+
+// ---------------------------------------------------------------------
+// Recruiter debrief: a one-glance "who to move along" summary of the ranking.
+// ---------------------------------------------------------------------
+function renderDebrief() {
+  const r = comparisonData.ranking;
+  const flagged = r.filter(c => c.fraud_flagged);
+  const decide = r.filter(c => c.conflict && !c.fraud_flagged);
+  const advance = r.filter(c => !c.conflict && !c.fraud_flagged && (c.label === "Strong Hire" || c.label === "Lean Hire"));
+  const hold = r.filter(c => !flagged.includes(c) && !decide.includes(c) && !advance.includes(c));
+  const chip = arr => arr.length ? arr.map(c => c.candidate_name).join(", ") : "—";
+  document.getElementById("compare-debrief").innerHTML = `
+    <div class="debrief">
+      <div class="debrief-title">Debrief &mdash; who to move along</div>
+      <div class="debrief-grid">
+        <div class="debrief-col advance"><span class="dl">Move forward</span><span class="dv">${chip(advance)}</span></div>
+        <div class="debrief-col decide"><span class="dl">Needs your decision</span><span class="dv">${chip(decide)}</span></div>
+        <div class="debrief-col flagged"><span class="dl">Flagged</span><span class="dv">${chip(flagged)}</span></div>
+        <div class="debrief-col hold"><span class="dl">Hold / insufficient</span><span class="dv">${chip(hold)}</span></div>
+      </div>
+    </div>`;
 }
 
 init();
