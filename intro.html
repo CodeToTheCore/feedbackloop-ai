@@ -153,6 +153,10 @@
   window.addEventListener('load',run);
   // Press R to replay (handy while screen-recording).
   window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r')location.reload();});
+  // When embedded as the app splash (/intro?embed=1), hide the replay control.
+  if(new URLSearchParams(location.search).has('embed')){
+    var rb=document.querySelector('.replay'); if(rb)rb.style.display='none';
+  }
 </script>
 </body>
 </html>

@@ -7,6 +7,21 @@
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+<!-- Cold-open splash: plays the animated intro, then fades into the app. -->
+<div id="intro-overlay">
+  <iframe src="/intro?embed=1" title="FeedbackLoop AI intro"></iframe>
+  <button id="intro-skip" onclick="document.getElementById('intro-overlay').remove()">Skip &#8629;</button>
+</div>
+<script>
+  // Don't show the splash on interviewer links or when ?nointro is set.
+  (function(){
+    var p = new URLSearchParams(location.search);
+    if (p.get("interview") || p.has("nointro")) {
+      var o = document.getElementById("intro-overlay");
+      if (o) o.remove();
+    }
+  })();
+</script>
 <div id="error-banner" class="error-banner" role="alert" style="display:none;">
   <span id="error-banner-text"></span>
   <button id="error-banner-close" aria-label="Dismiss">&times;</button>

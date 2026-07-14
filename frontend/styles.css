@@ -199,6 +199,17 @@ header{
 .confirm-actions button.danger:hover{ filter: brightness(1.05); }
 .confirm-actions button:disabled{ opacity: 0.6; cursor: default; }
 
+/* Cold-open splash overlay on the main app */
+#intro-overlay{ position:fixed; inset:0; z-index:1000; background:#14171C; transition:opacity .7s ease; }
+#intro-overlay.fade{ opacity:0; pointer-events:none; }
+#intro-overlay iframe{ width:100%; height:100%; border:0; display:block; }
+#intro-skip{
+  position:fixed; bottom:22px; right:24px; z-index:1001; font-family:var(--font-mono); font-size:12px;
+  color:var(--text-dim); background:rgba(27,31,38,0.85); border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; cursor:pointer;
+}
+#intro-skip:hover{ color:var(--sage); border-color:var(--sage); }
+
 /* SLA row scorecard link */
 .scorecard-link{ color: var(--sage); text-decoration: none; font-size: 12px; margin-top: 4px; display: inline-block; }
 .scorecard-link:hover{ text-decoration: underline; }

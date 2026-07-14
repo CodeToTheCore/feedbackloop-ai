@@ -90,10 +90,14 @@ async function init() {
   // Interviewer link (?interview={id}) -> show only the scorecard dashboard.
   const ivId = new URLSearchParams(location.search).get("interview");
   if (ivId) {
+    const o = document.getElementById("intro-overlay");
+    if (o) o.remove();
     document.querySelector(".app").style.display = "none";
     await renderInterviewerView(ivId);
     return;
   }
+
+  scheduleIntroDismiss();  // fade the cold-open splash into the app
 
   let req;
   try {
@@ -571,6 +575,16 @@ function maybeShowReparticipationAlert() {
 // Lets a panelist add notes and review the notes they've made.
 // ---------------------------------------------------------------------
 const SCORE_OPTIONS = ["Strong Yes", "Yes", "No", "Strong No"];
+
+// Fade the cold-open splash out after it plays, revealing the dashboard.
+function scheduleIntroDismiss() {
+  const o = document.getElementById("intro-overlay");
+  if (!o) return;
+  const kill = () => { o.classList.add("fade"); setTimeout(() => o.remove(), 750); };
+  const skip = document.getElementById("intro-skip");
+  if (skip) skip.addEventListener("click", (e) => { e.preventDefault(); kill(); });
+  setTimeout(kill, 7500);  // let the animation play, then dissolve into the app
+}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
