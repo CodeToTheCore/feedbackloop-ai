@@ -90,3 +90,38 @@ Representative results: LLM payloads verified to contain **no raw feedback**; in
 ## Caveats to keep handy
 - **LLM rationale is templated on the live URL** unless `ANTHROPIC_API_KEY` is set in Render (2-min env-var change). Everything else is fully live.
 - `main` has all features; deploy is current.
+
+---
+
+## Video intro cold-open & presenting tips
+
+### 1. Play & record the cold-open (2 minutes)
+- **Open it:** double-click `intro.html` in the project folder — it opens in your browser and plays automatically. Press **F** for fullscreen, **R** to replay.
+- **Record it (Mac):** `Shift+Cmd+5` → "Record Selected Portion" or "Entire Screen" → hit record, press **R** to trigger the animation clean, let it play ~10s, stop. That `.mov` is your opener.
+- Drop that clip at the front of your presentation (or just full-screen it live and let it play while you walk up — that works great and needs zero editing).
+
+### 2. Add AI narration (optional, ~5 min)
+Paste this ~35-second script into ElevenLabs (free tier) → download the mp3 → lay it over the recording. It's timed to the animation beats:
+
+```
+Meet FeedbackLoop AI — an intelligent agent for interview feedback.
+It chases down interviewer scorecards, synthesizes conflicting panel
+feedback, and helps recruiters decide who moves forward.
+But here's the difference: the AI never makes the hiring decision.
+Every ranking is deterministic code. The language model only writes
+the explanation — from data that's already been filtered and checked.
+Six features. A live deployment. And guardrails that even block
+malicious input in real time. This is FeedbackLoop AI.
+```
+
+### 3. One more unique idea (costs nothing, huge impact)
+Turn the injection demo into audience participation. When you get to the interviewer scorecard, say:
+
+> "This is where AI apps usually get hacked. Someone type me a sabotage instruction — I'll paste it in as interview notes."
+
+Take a suggestion from the room, paste it, submit → it gets flagged and excluded live. Nobody else in the class will have a demo the audience gets to *attack*. That's the moment people remember.
+
+### 4. Three quick tips (new + short on practice)
+- **Don't memorize — narrate what's on screen.** Your `CHEATSHEET.txt` is the safety net. Glance, don't read.
+- **Have one sentence you nail cold:** "The AI explains the decision — it never makes it." Say it at the start and the end. Repetition = confidence.
+- **If something breaks live, say so calmly:** "Let me refresh — real app, real database." That's a strength, not a stumble.
