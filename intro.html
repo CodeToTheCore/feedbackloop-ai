@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FeedbackLoop AI — Intro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14171C; --surface:#1B1F26; --raised:#21262F; --border:#2A2F38;
+    --text:#E8E6E1; --dim:#8B909A; --faint:#565C68;
+    --amber:#E8A33D; --sage:#6FA88A; --clay:#D5695D; --blue:#7C93C7;
+    --display:'Archivo',sans-serif; --body:'Inter',sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--body);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  /* moving glow + grid backdrop */
+  .bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
+  .bg .glow{
+    position:absolute; width:60vw; height:60vw; border-radius:50%;
+    background:radial-gradient(circle, rgba(111,168,138,0.16), transparent 60%);
+    top:-10vw; left:-5vw; filter:blur(20px); animation:drift 14s ease-in-out infinite alternate;
+  }
+  .bg .glow2{
+    position:absolute; width:50vw; height:50vw; border-radius:50%;
+    background:radial-gradient(circle, rgba(124,147,199,0.14), transparent 60%);
+    bottom:-15vw; right:-8vw; filter:blur(20px); animation:drift2 16s ease-in-out infinite alternate;
+  }
+  .bg .grid{
+    position:absolute; inset:0;
+    background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),
+                     linear-gradient(90deg, rgba(255,255,255,0.03) 1px,transparent 1px);
+    background-size:44px 44px; mask-image:radial-gradient(circle at center, black 30%, transparent 78%);
+    -webkit-mask-image:radial-gradient(circle at center, black 30%, transparent 78%);
+    opacity:0; animation:gridin 1.4s ease forwards .2s;
+  }
+  @keyframes drift{to{transform:translate(6vw,4vh) scale(1.1);}}
+  @keyframes drift2{to{transform:translate(-5vw,-3vh) scale(1.15);}}
+  @keyframes gridin{to{opacity:1;}}
+
+  .stage{position:relative;z-index:1;text-align:center;padding:40px;max-width:960px;}
+
+  .mark{
+    width:74px;height:74px;border-radius:18px;margin:0 auto 26px;
+    background:linear-gradient(135deg,var(--amber),var(--sage));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:800;font-size:30px;color:#14171C;
+    opacity:0;transform:scale(.6);animation:pop .7s cubic-bezier(.2,.8,.2,1) forwards .1s;
+    box-shadow:0 10px 40px rgba(111,168,138,0.25);
+  }
+  @keyframes pop{to{opacity:1;transform:scale(1);}}
+
+  h1{
+    font-family:var(--display);font-weight:800;font-size:64px;letter-spacing:-.02em;line-height:1;
+    opacity:0;transform:translateY(18px);animation:up .8s cubic-bezier(.2,.8,.2,1) forwards .7s;
+  }
+  h1 .ai{background:linear-gradient(135deg,var(--sage),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .tagline{
+    font-size:20px;color:var(--dim);margin-top:16px;font-weight:400;
+    opacity:0;transform:translateY(14px);animation:up .8s ease forwards 1.4s;
+  }
+  @keyframes up{to{opacity:1;transform:translateY(0);}}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:44px 0 8px;}
+  .tile{
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 12px;
+    opacity:0;transform:translateY(20px);
+  }
+  .tile.show{animation:up .7s cubic-bezier(.2,.8,.2,1) forwards;}
+  .tile .num{font-family:var(--mono);font-size:40px;font-weight:500;color:var(--text);line-height:1;}
+  .tile .num .suf{font-size:24px;color:var(--sage);}
+  .tile .lbl{font-size:12px;color:var(--dim);margin-top:10px;text-transform:uppercase;letter-spacing:.04em;}
+  .tile:nth-child(1) .num{color:var(--sage);}
+  .tile:nth-child(2) .num{color:var(--blue);}
+  .tile:nth-child(3) .num{color:var(--amber);}
+  .tile:nth-child(4) .num{color:var(--text);}
+
+  .principle{
+    font-family:var(--mono);font-size:15px;color:var(--dim);margin-top:34px;letter-spacing:.02em;
+    opacity:0;animation:up .8s ease forwards 6.4s;
+  }
+  .principle b{color:var(--sage);font-weight:500;}
+  .url{
+    margin-top:22px;font-size:15px;color:var(--faint);
+    opacity:0;animation:up .8s ease forwards 7.4s;
+  }
+  .url .live{color:var(--sage);}
+  .url .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sage);margin-right:7px;
+    box-shadow:0 0 0 0 rgba(111,168,138,.6);animation:pulse 1.8s infinite;vertical-align:middle;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(111,168,138,.5);}70%{box-shadow:0 0 0 10px rgba(111,168,138,0);}100%{box-shadow:0 0 0 0 rgba(111,168,138,0);}}
+
+  .replay{position:fixed;bottom:18px;right:20px;z-index:2;font-family:var(--mono);font-size:12px;
+    color:var(--faint);background:transparent;border:1px solid var(--border);border-radius:8px;
+    padding:7px 12px;cursor:pointer;}
+  .replay:hover{color:var(--sage);border-color:var(--sage);}
+
+  @media(max-width:760px){h1{font-size:42px;}.stats{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+  <div class="bg"><div class="glow"></div><div class="glow2"></div><div class="grid"></div></div>
+
+  <div class="stage">
+    <div class="mark">FL</div>
+    <h1>FeedbackLoop <span class="ai">AI</span></h1>
+    <div class="tagline">An AI agent for interview feedback &mdash; that never makes the hiring decision.</div>
+
+    <div class="stats">
+      <div class="tile" data-delay="2400"><div class="num"><span data-count="6">0</span></div><div class="lbl">features shipped</div></div>
+      <div class="tile" data-delay="2700"><div class="num"><span data-count="5">0</span></div><div class="lbl">candidates ranked</div></div>
+      <div class="tile" data-delay="3000"><div class="num"><span data-count="24">0</span><span class="suf">h</span></div><div class="lbl">SLA enforced</div></div>
+      <div class="tile" data-delay="3300"><div class="num"><span data-count="100">0</span><span class="suf">%</span></div><div class="lbl">decisions in code</div></div>
+    </div>
+
+    <div class="principle">Deterministic ranking in code &middot; the LLM only <b>explains</b>, never decides.</div>
+    <div class="url"><span class="dot"></span><span class="live">Live</span> &middot; feedbackloop-ai.onrender.com</div>
+  </div>
+
+  <button class="replay" onclick="run()">&#8635; replay</button>
+
+<script>
+  function easeOut(t){return 1-Math.pow(1-t,3);}
+  function countUp(el,target,dur){
+    const start=performance.now();
+    function tick(now){
+      const p=Math.min(1,(now-start)/dur);
+      el.textContent=Math.round(easeOut(p)*target);
+      if(p<1)requestAnimationFrame(tick);else el.textContent=target;
+    }
+    requestAnimationFrame(tick);
+  }
+  function run(){
+    // restart CSS animations by reloading the stage's animation state
+    document.querySelectorAll('.tile').forEach(t=>{t.classList.remove('show');});
+    // reflow
+    void document.body.offsetWidth;
+    document.querySelectorAll('.tile').forEach(tile=>{
+      const delay=+tile.dataset.delay;
+      setTimeout(()=>{
+        tile.classList.add('show');
+        const span=tile.querySelector('[data-count]');
+        countUp(span,+span.dataset.count,1200);
+      },delay);
+    });
+  }
+  // On first load, the CSS handles brand/title/tagline; JS handles tiles + counters.
+  window.addEventListener('load',run);
+  // Press R to replay (handy while screen-recording).
+  window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r')location.reload();});
+</script>
+</body>
+</html>
