@@ -93,6 +93,12 @@ def serve_frontend():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/intro")
+def serve_intro():
+    """Animated cold-open title card -- handy as a presentation opener at /intro."""
+    return FileResponse(FRONTEND_DIR.parent / "intro.html")
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "FeedbackLoop AI"}
