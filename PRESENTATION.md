@@ -83,7 +83,9 @@ Representative results: LLM payloads verified to contain **no raw feedback**; in
 5. **Safety** — injection filter (with the live demo), deterministic ranking, precision-first matching, graceful degradation.
 6. **Engineering rigor** — 3-layer testing; the DB-error bug found & fixed.
 7. **Live demo** — run the 4-min script.
-8. **What's next** — cross-company history, real ATS integration, per-candidate rationale caching.
+8. **What's next** — role-based authentication (recruiter / interviewer / hiring-manager login) behind the roles that are already enforced in the app; cross-company history; real ATS integration; per-candidate rationale caching.
+
+> **If asked "why no login?"** — "Access is role-based by design: hiring managers can't see the cross-candidate ranking, only recruiters can. Interviewers submit through a unique per-interview link — the link is the credential, like DocuSign or Calendly. Adding authentication behind those roles is the natural next step; the permission boundaries themselves are already enforced."
 
 ---
 
